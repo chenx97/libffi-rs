@@ -1,68 +1,51 @@
-# libffi-rs: Rust bindings for [libffi](https://sourceware.org/libffi/)
+# libffi-sys-rs: Low-level Rust bindings for [libffi]
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/tov/libffi-rs/Build%20&%20Test)](https://github.com/tov/libffi-rs/actions)
-[![Documentation](https://img.shields.io/docsrs/libffi/latest)](https://docs.rs/libffi/latest/libffi/)
-[![Crates.io](https://img.shields.io/crates/v/libffi.svg?maxAge=2592000)](https://crates.io/crates/libffi)
+[![Documentation](https://img.shields.io/docsrs/libffi-sys/latest)](https://docs.rs/libffi-sys/latest/libffi_sys/)
+[![Crates.io](https://img.shields.io/crates/v/libffi-sys.svg?maxAge=2592000)](https://crates.io/crates/libffi-sys)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE-APACHE)
 
 The C libffi library provides two main facilities: assembling calls
 to functions dynamically, and creating closures that can be called
-as ordinary C functions. In Rust, the latter means that we can turn
-a Rust lambda (or any object implementing `Fn`/`FnMut`) into an
-ordinary C function pointer that we can pass as a callback to C.
+as ordinary C functions. This is an undocumented wrapper, generated
+by bindgen, intended as the basis for higher-level bindings.
 
-## Repository Layout
+If you clone this repository in order to build the library and you do
+not plan to enable the `system` Cargo feature to build against your
+system’s C libffi, then you should do a recursive clone, by default this
+library builds C libffi from a Git submodule.
 
-This repository is a Cargo workspace containing both `libffi` and `libffi-sys`.
+See [the `libffi` crate] for a higher-level API.
 
 ## Usage
 
-Building `libffi` will build `lifbffi-sys`, which will in turn build the
-libffi C library [from github](https://github.com/libffi/libffi), which
-requires that you have a working make, C compiler, automake, and
-autoconf first. It’s [on crates.io](https://crates.io/crates/libffi), so
-you can add
+`libffi-sys` can either build its own copy of the libffi C library [from
+github][libffi github] or it can link against your
+system’s C libffi. By default it builds its own because many systems
+ship with an old C libffi; this requires that you have a working make,
+C compiler, automake, and autoconf first. If your system libffi
+is new enough (v3.2.1 as of October 2019), you can instead enable the
+`system` feature flag to use that. If you want this crate to build
+a C libffi for you, add
 
 ```toml
 [dependencies]
-libffi = "2.0.0"
+libffi-sys = "2.3.0"
 ```
 
-to your `Cargo.toml`.
-
-This crate depends on [the `libffi-sys` crate], which by default
-attempts to build its own version of the C libffi library. In order to
-use your system’s C libffi instead, enable this crate’s `system`
-feature in your `Cargo.toml`:
+to your `Cargo.toml`. If you want to use your system C libffi, then
 
 ```toml
-[features]
-libffi = { version = "2.0.0", features = ["system"] }
+[dependencies.libffi-sys]
+version = "2.3.0"
+features = ["system"]
 ```
 
-See [the `libffi-sys` documentation] for more information about how it
-finds C libffi.
+to your `Cargo.toml` instead.
 
-This crate supports Rust version 1.48 and later.
+This crate supports Rust version 1.32 and later.
 
-### Examples
-
-In this example, we convert a Rust lambda containing a free variable
-into an ordinary C code pointer. The type of `fun` below is
-`extern "C" fn(u64, u64) -> u64`.
-
-```rust
-use libffi::high::Closure2;
-
-let x = 5u64;
-let f = |y: u64, z: u64| x + y + z;
-
-let closure = Closure2::new(&f);
-let fun     = closure.code_ptr();
-
-assert_eq!(18, fun(6, 7));
-```
-
-[the `libffi-sys` crate]: https://crates.io/crates/libffi-sys/
-[the `libffi-sys` documentation]: https://docs.rs/libffi-sys/#usage
+[the `libffi` crate]: https://crates.io/crates/libffi/
+[libffi]: https://sourceware.org/libffi/
+[libffi github]: https://github.com/libffi/libffi
